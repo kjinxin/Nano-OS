@@ -7,7 +7,7 @@ void
 schedule(void) {
 	/* implement process/thread schedule here */
 	if (current==&pcbx)
-		current=&pcby;
+		current=pcby;
 	else
-		current=&pcbx;	
+		current=pcbx;	
 }

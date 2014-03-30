@@ -7,6 +7,6 @@ typedef struct PCB {
 } PCB;
 
 extern PCB *current;
-extern PCB pcbx;
-extern PCB pcby;
+extern PCB *pcbx;
+extern PCB *pcby;
 #endif
