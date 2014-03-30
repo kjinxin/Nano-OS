@@ -2,7 +2,6 @@
 
 PCB*
 create_kthread(void *fun) {
-	printk("jinxin\n");
 	return NULL;
 }
 void A(void);

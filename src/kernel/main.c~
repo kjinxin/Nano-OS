@@ -24,6 +24,7 @@ os_init(void) {
 
 	/* After paging is enabled, we can jump to the high address to keep 
 	 * consistent with virtual memory, although it is not necessary. */
+	printk("jj");
 	asm volatile (" addl %0, %%esp\n\t\
 					jmp *%1": : "r"(KOFFSET), "r"(os_init_cont));
 
