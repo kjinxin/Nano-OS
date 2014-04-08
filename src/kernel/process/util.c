@@ -1,37 +1,133 @@
 #include "kernel.h"
-PCB pcbx;
-PCB pcby;
+
+void A(void);
+void B(void);
+void C(void);
+void D(void);
+
+//PCB pcbx;
+//PCB pcby;
+PCB PCB_of_thread_A;
+PCB PCB_of_thread_B;
+PCB PCB_of_thread_C;
+PCB PCB_of_thread_D;
+ListHead pcbwake;
+ListHead pcbsleep;
 int num=0;
-PCB*
+/*PCB*
 create_kthread(void *fun) {
 	PCB *pcb;
 	if (num==0) pcb=&pcbx;
 	else pcb=&pcby;
 	(*pcb).tf = (*pcb).kstack;
 	(*pcb).kstack[14]=(uint32_t) fun;  // eip
-	(*pcb).kstack[15]=0x8;      // cs 
+	(*pcb).kstack[15]=0x8;      // cs
 	(*pcb).kstack[16]=0x202;   // eflags
+        //其他寄存器等到下次要用的时候会统一赋值
+	num++;
+	return pcb;
+}*/
+
+PCB*
+create_kthread(void *fun) {
+	PCB *pcb;
+	switch (num)
+	{
+		case 0:
+			pcb=&PCB_of_thread_A;
+			break;
+		case 1:
+			pcb=&PCB_of_thread_B;
+			break;
+		case 2:
+			pcb=&PCB_of_thread_C;
+			break;
+		case 3:
+			pcb=&PCB_of_thread_D;
+			break;
+		default: pcb=&PCB_of_thread_A;
+	}
+	TrapFrame *tf=(TrapFrame *)(pcb->kstack+KSTACK_SIZE)-1;
+	pcb->tf = tf;
+	tf->eip=(uint32_t) fun;
+	tf->cs=0x8;
+	tf->eflags=0x202; 
+		
+	//(*pcb).kstack[14]=(uint32_t) fun;  // eip
+	//(*pcb).kstack[15]=0x8;      // cs
+	//(*pcb).kstack[16]=0x202;   // eflags
+        //其他寄存器等到下次要用的时候会统一赋值
 	num++;
 	return pcb;
 }
-void A(void);
-void B(void);
 void
 init_proc() {
-	create_kthread(A);
+        list_init(&pcbwake);   // initialize the list of ready
+        list_init(&pcbsleep);   // initialize the list of block
+	create_kthread(A);      
+	list_add_after(&pcbwake,&(PCB_of_thread_A.list));
 	create_kthread(B);
+	list_add_after(&pcbsleep,&(PCB_of_thread_B.list));
+	create_kthread(C);
+	list_add_after(&pcbsleep,&(PCB_of_thread_C.list));
+	create_kthread(D);
+	list_add_after(&pcbsleep,&(PCB_of_thread_D.list));
+}
+
+void sleep()
+{
+	list_del(&(current->list));
+	list_add_after(&pcbsleep,&(current->list));
+	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
+	asm("int $0x80");	
+}
+
+void wakeup(PCB *PCB_of_thread)
+{
+	list_del(&(PCB_of_thread->list));
+	list_add_after(&pcbwake,&(PCB_of_thread->list));
 }
 void A () { 
     int x = 0;
     while(1) {
-        if(x % 100000 == 0) {printk("a");}
+        if(x % 100000 == 0) {
+            printk("a");
+            wakeup(&PCB_of_thread_B);
+            sleep();
+        }
         x ++;
     }
 }
 void B () { 
     int x = 0;
     while(1) {
-        if(x % 100000 == 0) {printk("b");}
+        if(x % 100000 == 0) {
+            printk("b");
+            wakeup(&PCB_of_thread_C);
+            sleep();
+        }
+        x ++;
+    }
+}
+void C () { 
+    int x = 0;
+    while(1) {
+        if(x % 100000 == 0) {
+            printk("c");
+            wakeup(&PCB_of_thread_D);
+            sleep();
+        }
+        x ++;
+    }
+}
+void D () { 
+    int x = 0;
+    while(1) {
+        if(x % 100000 == 0) {
+            printk("d");
+            wakeup(&PCB_of_thread_A);
+            sleep();
+        }
         x ++;
     }
 }
