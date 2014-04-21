@@ -8,6 +8,11 @@ typedef struct PCB {
 	ListHead list; 
 } PCB;
 
+typedef struct Semaphore {
+	int token;
+	ListHead block;		/* blocking queue */
+} Sem;
+
 extern PCB *current;
 extern ListHead pcbwake;
 extern ListHead pcbsleep;

@@ -18,7 +18,6 @@ schedule(void) {
 	{
 		current=list_entry(pcbwake.next, PCB, list);
 	}
-	static int count = 5;
 } 
 /*void
 schedule(void) {

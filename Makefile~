@@ -30,8 +30,6 @@ kernel: $(OBJS)
 count:
 	find . -name "*.[chS]"  | xargs cat | wc -l 
 
-count1:
-	find . -name "*.[chS]"  | xargs grep '^.' | wc -l 
 clean:
 	@cd boot; make clean
 	rm -f kernel disk.img count $(OBJS) $(OBJS:.o=.d)

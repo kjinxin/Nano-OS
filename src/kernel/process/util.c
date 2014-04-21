@@ -14,19 +14,7 @@ PCB PCB_of_thread_D;
 ListHead pcbwake;
 ListHead pcbsleep;
 int num=0;
-/*PCB*
-create_kthread(void *fun) {
-	PCB *pcb;
-	if (num==0) pcb=&pcbx;
-	else pcb=&pcby;
-	(*pcb).tf = (*pcb).kstack;
-	(*pcb).kstack[14]=(uint32_t) fun;  // eip
-	(*pcb).kstack[15]=0x8;      // cs
-	(*pcb).kstack[16]=0x202;   // eflags
-        //其他寄存器等到下次要用的时候会统一赋值
-	num++;
-	return pcb;
-}*/
+
 
 PCB*
 create_kthread(void *fun) {
@@ -64,14 +52,14 @@ void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
         list_init(&pcbsleep);   // initialize the list of block
-	create_kthread(A);      
+	/*create_kthread(A);      
 	list_add_after(&pcbwake,&(PCB_of_thread_A.list));
 	create_kthread(B);
 	list_add_after(&pcbsleep,&(PCB_of_thread_B.list));
 	create_kthread(C);
 	list_add_after(&pcbsleep,&(PCB_of_thread_C.list));
 	create_kthread(D);
-	list_add_after(&pcbsleep,&(PCB_of_thread_D.list));
+	list_add_after(&pcbsleep,&(PCB_of_thread_D.list));*/
 }
 
 void sleep()
@@ -87,7 +75,60 @@ void wakeup(PCB *PCB_of_thread)
 	list_del(&(PCB_of_thread->list));
 	list_add_after(&pcbwake,&(PCB_of_thread->list));
 }
-void A () { 
+
+
+#define NBUF 5
+#define NR_PROD 3
+#define NR_CONS 4
+ 
+int buf[NBUF], f = 0, r = 0, g = 1;
+int last = 0;
+Sem empty, full, mutex;
+ 
+void
+test_producer(void) {
+	while (1) {
+		P(&mutex);
+		P(&empty);
+		if(g % 10000 == 0) {
+			printk(".");	// tell us threads are really working
+		}
+		buf[f ++] = g ++;
+		f %= NBUF;
+		V(&full);
+		V(&mutex);
+	}
+}
+ 
+void
+test_consumer(void) {
+	int get;
+	while (1) {
+		P(&mutex);
+		P(&full);
+		get = buf[r ++];
+		assert(last == get - 1);	// the products should be strictly increasing
+		last = get;
+		r %= NBUF;
+		V(&empty);
+		V(&mutex);
+	}
+}
+ 
+void
+test_setup(void) {
+	create_sem(&full, 0);
+	create_sem(&empty, NBUF);
+	create_sem(&mutex, 1);
+	int i;
+	for(i = 0; i < NR_PROD; i ++) {
+		wakeup(create_kthread(test_producer));
+	}
+	for(i = 0; i < NR_CONS; i ++) {
+		wakeup(create_kthread(test_consumer));
+	}
+}
+/*void A () { 
     int x = 0;
     while(1) {
         if(x % 100000 == 0) {
@@ -131,4 +172,4 @@ void D () {
         x ++;
     }
 }
-
+*/
