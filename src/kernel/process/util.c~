@@ -15,7 +15,7 @@ void test_setup(void);
 
 PCB PCB_thread[100];
 ListHead pcbwake;
-ListHead pcbsleep;
+//ListHead pcbsleep;
 int num=0;
 
 
@@ -35,7 +35,7 @@ create_kthread(void *fun) {
 void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
-        list_init(&pcbsleep);  // initialize the list of block
+        //list_init(&pcbsleep);  // initialize the list of block
 	test_setup();
 }
 
@@ -47,15 +47,16 @@ void lock(){
 void unlock(){
 	if (--depth==0) 
 	sti();
-	depth++;
 }
 
-void sleep()
+void sleep(Sem *s)
 {
-	unlock();
-	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
 	lock();
-	asm("int $0x80");	
+	list_del(&(current->list));
+	list_add_after(&(s->block),&(current->list));
+	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
+	unlock();
+	asm volatile ("int $0x80");	
 }
 
 void wakeup(PCB *PCB_of_thread)
@@ -81,9 +82,7 @@ void P(Sem *s){
 	if (s->taken>0)
 		(s->taken)--;
 	else {
-		list_del(&(current->list));
-		list_add_after(&(s->block),&(current->list));
-		sleep();
+		sleep(s);
 		}
 	unlock();
 }
@@ -112,7 +111,6 @@ test_consumer(void) {
 		P(&full);
 		P(&mutex);
 		get = buf[r ++];
-		printk("%d  %d %d\n",get,last,r);
 		assert(last == get - 1);	// the products should be strictly increasing
 		last = get;
 		r %= NBUF;

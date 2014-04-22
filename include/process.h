@@ -15,12 +15,6 @@ typedef struct Semaphore {
 
 extern PCB *current;
 extern ListHead pcbwake;
-extern ListHead pcbsleep;
-extern PCB pcbx;
-extern PCB pcby;
-extern PCB PCB_of_thread_A;
-extern PCB PCB_of_thread_B;
-extern PCB PCB_of_thread_C;
-extern PCB PCB_of_thread_D;
+//extern ListHead pcbsleep;
 extern PCB PCB_thread[100];
 #endif

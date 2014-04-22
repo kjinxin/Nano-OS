@@ -36,6 +36,8 @@ list_del(ListHead *data) {
 	assert(data != NULL);
 	ListHead *prev = data->prev;
 	ListHead *next = data->next;
+	assert(prev != NULL && prev->next == data);
+	assert(next != NULL && next->prev == data);
 	if (prev != NULL) prev->next = next;
 	if (next != NULL) next->prev = prev;
 }

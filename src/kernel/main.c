@@ -2,7 +2,10 @@
 #include "x86/x86.h"
 #include "memory.h"
 
-
+#define PORT_TIME 0x40
+#define FREQ_8253 1193182
+#define HZ        100000
+ 
 void init_page(void);
 void init_serial(void);
 void init_segment(void);
@@ -51,6 +54,13 @@ os_init_cont(void) {
 	init_proc();
 
 	welcome();
+
+	/*int count = FREQ_8253 / HZ;
+	assert(count < 65536);
+	out_byte(PORT_TIME + 3, 0x34);
+	out_byte(PORT_TIME    , count % 256);
+	out_byte(PORT_TIME    , count / 256);*/
+	
 	sti();
 
 	/* This context now becomes the idle process. */
