@@ -9,7 +9,7 @@ typedef struct PCB {
 } PCB;
 
 typedef struct Semaphore {
-	int token;
+	int taken;
 	ListHead block;		/* blocking queue */
 } Sem;
 
@@ -22,4 +22,5 @@ extern PCB PCB_of_thread_A;
 extern PCB PCB_of_thread_B;
 extern PCB PCB_of_thread_C;
 extern PCB PCB_of_thread_D;
+extern PCB PCB_thread[100];
 #endif

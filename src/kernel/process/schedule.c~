@@ -16,14 +16,7 @@ schedule(void) {
 	// implement process/thread schedule here
 	if  (!list_empty(&pcbwake))
 	{
-		current=list_entry(pcbwake.next, PCB, list);
+		current=list_entry((pcbwake.prev, PCB, list);
 	}
 } 
-/*void
-schedule(void) {
-	// implement process/thread schedule here 
-	if (current==&pcbx)
-		current=&pcby;
-	else
-		current=&pcbx;	
-} */
+
