@@ -65,30 +65,30 @@ void sleep(Sem *s)    // the sleep process
 
 void wakeup(PCB *PCB_of_thread)
 {
-	lock();
-	list_del(&(PCB_of_thread->list));
-	list_add_after(&pcbwake,&(PCB_of_thread->list));
-	unlock();
+	lock();     // lock it 
+	list_del(&(PCB_of_thread->list));                  // first we delete from the initial list
+	list_add_after(&pcbwake,&(PCB_of_thread->list));   // add to the active list 
+	unlock();   // unlock it 
 }
 
 
 void V(Sem *s){
-	lock();
-	if (list_empty(&(s->block)))
-		(s->taken)++;
+	lock();     // lock it 
+	if (list_empty(&(s->block)))    // if we the list that wants the resource do not empty
+		(s->taken)++;           //  --
 	else 
-		wakeup(list_entry((s->block).prev, PCB, list));
-	unlock();
-}
+		wakeup(list_entry((s->block).prev, PCB, list));    // wake up the thread
+	unlock();   // unlock it 
+} 
 
 void P(Sem *s){
-	lock();
+	lock();    // lock it 
 	if (s->taken>0)
-		(s->taken)--;
+		(s->taken)--;   // if we can enter the resource , then enter
 	else {
-		sleep(s);
+		sleep(s);  // put the current thread to sleep 
 		}
-	unlock();
+	unlock();   // unlock it
 }
 
  
