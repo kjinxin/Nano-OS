@@ -17,4 +17,5 @@ extern PCB *current;
 extern ListHead pcbwake;
 //extern ListHead pcbsleep;
 extern PCB PCB_thread[100];
+extern int depth;
 #endif

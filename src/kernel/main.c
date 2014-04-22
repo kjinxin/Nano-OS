@@ -1,6 +1,4 @@
-#include "common.h"
-#include "x86/x86.h"
-#include "memory.h"
+#include "kernel.h"
 
 #define PORT_TIME 0x40
 #define FREQ_8253 1193182
@@ -15,7 +13,6 @@ void init_proc(void);
 void welcome(void);
 
 void os_init_cont(void);
-
 void
 os_init(void) {
 	/* Notice that when we are here, IF is always 0 (see bootloader) */
@@ -51,15 +48,15 @@ os_init_cont(void) {
 	init_intr();
 
 	/* Initialize processes. You should fill this. */
+	depth=1;
 	init_proc();
-
 	welcome();
-
-	/*int count = FREQ_8253 / HZ;
+	depth=0;
+	int count = FREQ_8253 / HZ;
 	assert(count < 65536);
 	out_byte(PORT_TIME + 3, 0x34);
 	out_byte(PORT_TIME    , count % 256);
-	out_byte(PORT_TIME    , count / 256);*/
+	out_byte(PORT_TIME    , count / 256);
 	
 	sti();
 

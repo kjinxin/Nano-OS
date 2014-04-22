@@ -4,7 +4,8 @@
 #define NR_PROD 3
 #define NR_CONS 4
  
-static int depth=0;
+int depth=0;
+
 int buf[NBUF], f = 0, r = 0, g = 1;
 int last = 0;
 Sem empty, full, mutex;
@@ -27,7 +28,9 @@ create_kthread(void *fun) {
 	pcb->tf = tf;
 	tf->eip=(uint32_t) fun;
 	tf->cs=0x8;
-	tf->eflags=0x202; 	
+	tf->eflags=0x202; 
+	tf->ds = 0x10;
+	tf->es = 0x10;	
         //其他寄存器等到下次要用的时候会统一赋值
 	num++;
 	return pcb;
@@ -36,6 +39,7 @@ void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
         //list_init(&pcbsleep);  // initialize the list of block
+	
 	test_setup();
 }
 
@@ -45,14 +49,14 @@ void lock(){
 }
 
 void unlock(){
-	if (--depth==0) 
+	if (--depth==0)   // to dec the depth of lock
 	sti();
 }
 
-void sleep(Sem *s)
+void sleep(Sem *s)    // the sleep process 
 {
 	lock();
-	list_del(&(current->list));
+	//list_del(&(current->list));
 	list_add_after(&(s->block),&(current->list));
 	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
 	unlock();
