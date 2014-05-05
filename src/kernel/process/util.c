@@ -1,24 +1,9 @@
 #include "kernel.h"
-
-#define NBUF 5
-#define NR_PROD 3
-#define NR_CONS 4
  
 int depth=0;
-
-int buf[NBUF], f = 0, r = 0, g = 1;
-int last = 0;
-Sem empty, full, mutex;
-
-
-void test_setup(void);
-
-
 PCB PCB_thread[100];
 ListHead pcbwake;
-//ListHead pcbsleep;
 int num=0;
-
 
 PCB*
 create_kthread(void *fun) {
@@ -91,54 +76,76 @@ void P(Sem *s){
 	unlock();   // unlock it
 }
 
- 
-void
-test_producer(void) {
-	while (1) {
-		P(&empty);
-		P(&mutex);
-		if(g % 10000 == 0) {
-			printk(".");	// tell us threads are really working
+void A () { 
+	Msg m1, m2;
+	m1.src = current->pid;
+	int x = 0;
+	while(1) {
+		if(x % 10000000 == 0) {
+			printk("a"); 
+			send(pidE, &m1);
+			receive(pidE, &m2);
 		}
-		buf[f ++] = g ++;
-		f %= NBUF;
-		V(&mutex);
-		V(&full);
+		x ++;
 	}
 }
-
+void B () { 
+	Msg m1, m2;
+	m1.src = current->pid;
+	int x = 0;
+	receive(pidE, &m2);
+	while(1) {
+		if(x % 10000000 == 0) {
+			printk("b"); 
+			send(pidE, &m1);
+			receive(pidE, &m2);
+		}
+		x ++;
+	}
+}
+void C () { 
+	Msg m1, m2;
+	m1.src = current->pid;
+	int x = 0;
+	receive(pidE, &m2);
+	while(1) {
+		if(x % 10000000 == 0) {
+			printk("c"); 
+			send(pidE, &m1);
+			receive(pidE, &m2);
+		}
+		x ++;
+	}
+}
+void D () { 
+	Msg m1, m2;
+	m1.src = current->pid;
+	receive(pidE, &m2);
+	int x = 0;
+	while(1) {
+		if(x % 10000000 == 0) {
+			printk("d"); 
+			send(pidE, &m1);
+			receive(pidE, &m2);
+		}
+		x ++;
+	}
+}
  
-void
-test_consumer(void) {
-	int get;
-	while (1) {
-		P(&full);
-		P(&mutex);
-		get = buf[r ++];
-		assert(last == get - 1);	// the products should be strictly increasing
-		last = get;
-		r %= NBUF;
-		V(&mutex);
-		V(&empty);
+void E () {
+	Msg m1, m2;
+	m2.src = current->pid;
+	char c;
+	while(1) {
+		receive(ANY, &m1);
+		if(m1.src == pidA) {c = '|'; m2.dest = pidB; }
+		else if(m1.src == pidB) {c = '/'; m2.dest = pidC;}
+		else if(m1.src == pidC) {c = '-'; m2.dest = pidD;}
+		else if(m1.src == pidD) {c = '\\';m2.dest = pidA;}
+		else assert(0);
+ 
+		printk("\033[s\033[1000;1000H%c\033[u", c);
+		send(m2.dest, &m2);
 	}
+ 
 }
-
-void create_sem(Sem *sem, int num)
-{
-	list_init(&(sem->block));
-	sem->taken=num;
-} 
-void
-test_setup(void) {
-	create_sem(&full, 0);
-	create_sem(&empty, NBUF);
-	create_sem(&mutex, 1);
-	int i;
-	for(i = 0; i < NR_PROD; i ++) {
-		wakeup(create_kthread(test_producer));
-	}
-	for(i = 0; i < NR_CONS; i ++) {
-		wakeup(create_kthread(test_consumer));
-	}
-}
-
