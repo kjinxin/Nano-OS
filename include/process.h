@@ -2,16 +2,22 @@
 #define __PROCESS_H__
 #define KSTACK_SIZE 4096
 #include "adt/list.h"
-typedef struct PCB {
-	void *tf;
-	uint32_t kstack[KSTACK_SIZE];
-	ListHead list; 
-} PCB;
 
 typedef struct Semaphore {
 	int taken;
 	ListHead block;		/* blocking queue */
 } Sem;
+
+
+typedef struct PCB {
+	void *tf;
+	uint32_t kstack[KSTACK_SIZE];
+	int depth;
+	pid_t pid;
+	Sem msg_mutex,msg_num;
+	ListHead list,listmsg;
+} PCB;
+
 
 typedef struct Message {
 	pid_t src, dest;
@@ -49,4 +55,11 @@ void wakeup(PCB *PCB_of_thread);
 void send(pid_t dest, Msg *m);
 void receive(pid_t src, Msg *m);
 
+void create_sem(Sem *sem, int num);
+
+void A();
+void B();
+void C();
+void D();
+void E();
 #endif
