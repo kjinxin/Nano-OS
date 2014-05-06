@@ -1,5 +1,7 @@
 #include "kernel.h"
 #include "string.h"
+#include "hal.h"
+#include "time.h"
 int depth=0;
 PCB PCB_thread[100];
 Msg Msg_q[100000];
@@ -31,7 +33,7 @@ create_kthread(void *fun) {
 void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
-        //list_init(&pcbsleep);  // initialize the list of block
+	
 	PCB *pcb;
 	pcb=create_kthread(A);
 	pidA=pcb->pid;
@@ -47,7 +49,10 @@ init_proc() {
 	wakeup(pcb);
 	pcb=create_kthread(E);
 	pidE=pcb->pid;
-	wakeup(pcb);
+	wakeup(pcb);  
+	
+	//wakeup(create_kthread(read_mbr));	
+	
 }
 
 void lock(){  
@@ -69,7 +74,7 @@ void sleep(Sem *s)    // the sleep process
 	}
 	list_del(&current->list);
 	list_add_after(&(s->block),&(current->list));
-	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
+	wait_intr();   // we can set the interapt, also we can wait for the interapt!
 	unlock();
 	asm volatile ("int $0x80");	
 }
@@ -107,21 +112,23 @@ void send(pid_t dest, Msg *m)
 {
 	PCB *pcb=fetch_pcb(dest);
 	P(&pcb->msg_mutex);
+	lock();
 	m->dest=dest;
 	Msg *mm=&Msg_q[msgnum++];
-	*mm=*m;
+	memcpy(mm, m, sizeof(Msg));
 	list_init(&m->list);
 	list_add_after(&pcb->listmsg,&m->list);
+	unlock();
 	V(&pcb->msg_num);
 	V(&pcb->msg_mutex);
 }
 
 void receive(pid_t src, Msg *m)
 {
-	//start1:
-	printk("jinxin");
+	start1:
 	P(&current->msg_num);
 	P(&current->msg_mutex);
+	lock();
 	ListHead *ptr;
 	list_foreach(ptr, &current->listmsg)
 	{
@@ -129,16 +136,17 @@ void receive(pid_t src, Msg *m)
 		if (src == ANY || src == curm->src)
 		{
 			list_del(ptr);
-			*curm=*m;
-			//memcpy(m, curm, sizeof(Msg));
+			memcpy(m, curm, sizeof(Msg));
 			V(&current->msg_mutex);
 			return;
 		}
 	}
+	
+	unlock();
 	V(&current->msg_mutex);
 	V(&current->msg_num);
 	asm volatile ("int $0x80");
-	//goto start1;
+	goto start1;
 }
 
 PCB *fetch_pcb(pid_t pid)
@@ -224,3 +232,18 @@ void E () {
 	}
  
 }
+
+
+void
+read_mbr(void) {
+	unsigned char buf[512];
+	size_t num;
+	dev_read("hda", current->pid, buf, 0, 512);
+	for (num=0; num < 512; num++) {
+		if (buf[num]<16) printk("0");
+		printk("0x%x    ", buf[num]&255);
+	}
+	while (1) ;
+}
+
+

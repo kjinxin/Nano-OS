@@ -65,4 +65,5 @@ void B();
 void C();
 void D();
 void E();
+void read_mbr();
 #endif

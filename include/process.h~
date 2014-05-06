@@ -14,7 +14,7 @@ typedef struct PCB {
 	void *tf;
 	uint32_t kstack[KSTACK_SIZE];
 	int depth;
-	int sleep_p;
+	int sleep;
 	pid_t pid;
 	Sem msg_mutex,msg_num;
 	ListHead list,listmsg;

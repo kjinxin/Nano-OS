@@ -50,7 +50,7 @@ os_init_cont(void) {
 
 	/* Initialize processes. You should fill this. */
 	init_proc();
-	init_driver();
+	//init_driver();
 	welcome();
 	sti();
 
