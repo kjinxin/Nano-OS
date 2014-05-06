@@ -57,3 +57,15 @@ size_t strlen(const char *str) {
 void strcpy(char *d, const char *s) {
 	memcpy(d, s, strlen(s) + 1);
 }
+
+size_t strcmp(const char *s1, const char *s2)
+{
+	while (*s1)
+	{
+		if ((*s1)!=(*s2))
+		return 1;
+		s1++; s2++;		
+	}
+	if (*s2) return 1;
+	return 0;			
+}

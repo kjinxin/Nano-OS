@@ -4,9 +4,10 @@
 #include "common.h"
 
 char *itoa(int);
+char *itoah(int);
 void memcpy(void *, const void *, size_t);
 void memset(void *, uint8_t, size_t);
 size_t strlen(const char *);
 void strcpy(char *d, const char *s);
-
+size_t strcmp(char *s1, char *s2);
 #endif

@@ -3,6 +3,7 @@
 #define KSTACK_SIZE 4096
 #include "adt/list.h"
 
+#define ANY -1
 typedef struct Semaphore {
 	int taken;
 	ListHead block;		/* blocking queue */
@@ -13,6 +14,7 @@ typedef struct PCB {
 	void *tf;
 	uint32_t kstack[KSTACK_SIZE];
 	int depth;
+	int sleep;
 	pid_t pid;
 	Sem msg_mutex,msg_num;
 	ListHead list,listmsg;
@@ -41,6 +43,7 @@ typedef struct Message {
 extern PCB *current;
 extern ListHead pcbwake;
 extern PCB PCB_thread[100];
+extern Msg Msg_q[100000];
 extern int depth;
 
 
@@ -56,7 +59,7 @@ void send(pid_t dest, Msg *m);
 void receive(pid_t src, Msg *m);
 
 void create_sem(Sem *sem, int num);
-
+PCB *fetch_pcb(pid_t pid);
 void A();
 void B();
 void C();

@@ -1,10 +1,12 @@
 #include "kernel.h"
- 
+#include "string.h"
 int depth=0;
 PCB PCB_thread[100];
+Msg Msg_q[100000];
+int msgnum=0;
 ListHead pcbwake;
 int num=0;
-int ANY=-1;
+int pidA, pidB, pidC, pidD, pidE;
 PCB*
 create_kthread(void *fun) {
 	PCB *pcb;
@@ -17,6 +19,7 @@ create_kthread(void *fun) {
 	tf->ds = 0x10;
 	tf->es = 0x10;	
 	pcb->depth=0;
+	pcb->sleep=0;
 	pcb->pid=num++;
         //其他寄存器等到下次要用的时候会统一赋值
 	list_init(&pcb->list);
@@ -29,11 +32,22 @@ void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
         //list_init(&pcbsleep);  // initialize the list of block
-	wakeup(create_kthread(A));
-	wakeup(create_kthread(B));
-	wakeup(create_kthread(C));
-	wakeup(create_kthread(D));
-	wakeup(create_kthread(E));
+	PCB *pcb;
+	pcb=create_kthread(A);
+	pidA=pcb->pid;
+	wakeup(pcb);
+	pcb=create_kthread(B);
+	pidB=pcb->pid;
+	wakeup(pcb);
+	pcb=create_kthread(C);
+	pidC=pcb->pid;
+	wakeup(pcb);
+	pcb=create_kthread(D);
+	pidD=pcb->pid;
+	wakeup(pcb);
+	pcb=create_kthread(E);
+	pidE=pcb->pid;
+	wakeup(pcb);
 }
 
 void lock(){  
@@ -49,7 +63,11 @@ void unlock(){
 void sleep(Sem *s)    // the sleep process 
 {
 	lock();
-	list_del(&(current->list));    // delete the current thread from it original list
+	if (current->sleep==0) 
+	{
+		current->sleep=1;
+	}
+	list_del(&current->list);
 	list_add_after(&(s->block),&(current->list));
 	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
 	unlock();
@@ -61,6 +79,7 @@ void wakeup(PCB *PCB_of_thread)
 	lock();     // lock it 
 	list_del(&(PCB_of_thread->list));                  // first we delete from the initial list
 	list_add_after(&pcbwake,&(PCB_of_thread->list));   // add to the active list 
+	PCB_of_thread->sleep=0;
 	unlock();   // unlock it 
 }
 
@@ -86,9 +105,11 @@ void P(Sem *s){
 
 void send(pid_t dest, Msg *m)
 {
-	PCB *pcb=&PCB_thread[dest];
+	PCB *pcb=fetch_pcb(dest);
 	P(&pcb->msg_mutex);
 	m->dest=dest;
+	Msg *mm=&Msg_q[msgnum++];
+	*mm=*m;
 	list_init(&m->list);
 	list_add_after(&pcb->listmsg,&m->list);
 	V(&pcb->msg_num);
@@ -97,6 +118,8 @@ void send(pid_t dest, Msg *m)
 
 void receive(pid_t src, Msg *m)
 {
+	//start1:
+	printk("jinxin");
 	P(&current->msg_num);
 	P(&current->msg_mutex);
 	ListHead *ptr;
@@ -106,13 +129,22 @@ void receive(pid_t src, Msg *m)
 		if (src == ANY || src == curm->src)
 		{
 			list_del(ptr);
-			*m=*curm;
-			break;
+			*curm=*m;
+			//memcpy(m, curm, sizeof(Msg));
+			V(&current->msg_mutex);
+			return;
 		}
 	}
 	V(&current->msg_mutex);
+	V(&current->msg_num);
+	asm volatile ("int $0x80");
+	//goto start1;
 }
 
+PCB *fetch_pcb(pid_t pid)
+{
+	return &PCB_thread[pid];
+}
 void create_sem(Sem *sem, int num)
 {
 	list_init(&(sem->block));
@@ -126,8 +158,8 @@ void A () {
 	while(1) {
 		if(x % 10000000 == 0) {
 			printk("a"); 
-			send(4, &m1);
-			receive(4, &m2);
+			send(pidE, &m1);
+			receive(pidE, &m2);
 		}
 		x ++;
 	}
@@ -136,12 +168,12 @@ void B () {
 	Msg m1, m2;
 	m1.src = current->pid;
 	int x = 0;
-	receive(4, &m2);
+	receive(pidE, &m2);
 	while(1) {
 		if(x % 10000000 == 0) {
 			printk("b"); 
-			send(4, &m1);
-			receive(4, &m2);
+			send(pidE, &m1);
+			receive(pidE, &m2);
 		}
 		x ++;
 	}
@@ -150,12 +182,12 @@ void C () {
 	Msg m1, m2;
 	m1.src = current->pid;
 	int x = 0;
-	receive(4, &m2);
+	receive(pidE, &m2);
 	while(1) {
 		if(x % 10000000 == 0) {
 			printk("c"); 
-			send(4, &m1);
-			receive(4, &m2);
+			send(pidE, &m1);
+			receive(pidE, &m2);
 		}
 		x ++;
 	}
@@ -163,13 +195,13 @@ void C () {
 void D () { 
 	Msg m1, m2;
 	m1.src = current->pid;
-	receive(4, &m2);
+	receive(pidE, &m2);
 	int x = 0;
 	while(1) {
 		if(x % 10000000 == 0) {
 			printk("d"); 
-			send(4, &m1);
-			receive(4, &m2);
+			send(pidE, &m1);
+			receive(pidE, &m2);
 		}
 		x ++;
 	}
@@ -181,10 +213,10 @@ void E () {
 	char c;
 	while(1) {
 		receive(ANY, &m1);
-		if(m1.src == 0) {c = '|'; m2.dest = 1; }
-		else if(m1.src == 1) {c = '/'; m2.dest = 2;}
-		else if(m1.src == 2) {c = '-'; m2.dest = 3;}
-		else if(m1.src == 3) {c = '\\';m2.dest = 0;}
+		if(m1.src == pidA) {c = '|'; m2.dest = pidB; }
+		else if(m1.src == pidB) {c = '/'; m2.dest = pidC;}
+		else if(m1.src == pidC) {c = '-'; m2.dest = pidD;}
+		else if(m1.src == pidD) {c = '\\';m2.dest = pidA;}
 		else assert(0);
  
 		printk("\033[s\033[1000;1000H%c\033[u", c);

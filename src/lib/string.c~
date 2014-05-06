@@ -8,9 +8,35 @@
 char *itoa(int a) {
 	static char buf[30];
 	char *p = buf + sizeof(buf) - 1;
+	if (a>=0)
 	do {
 		*--p = '0' + a % 10;
 	} while (a /= 10);
+	else
+	{
+		do {
+      			*--p = '0' - (a % 10);
+    		} while (a /= 10);
+    		*--p = '-';
+	}
+	return p;
+}
+
+char *itoah(int a){
+	const char *digit = "0123456789abcdef";
+	static char buf[30];
+	char *p = buf + sizeof(buf) - 1;
+	if (a>=0)
+	do {
+		*--p = digit[a % 16];
+	} while (a /= 16);
+	else
+	{
+		do {
+      			*--p = digit[- (a % 10)];
+    		} while (a /= 10);
+    		*--p = '-';
+	}
 	return p;
 }
 
@@ -30,4 +56,16 @@ size_t strlen(const char *str) {
 
 void strcpy(char *d, const char *s) {
 	memcpy(d, s, strlen(s) + 1);
+}
+
+size_t strcmp(const char *s1, const char *s2)
+{
+	while (*s1)
+	{
+		if ((*s1)!=(*s2))
+		return 1;
+		s1++; s2++;		
+	}
+	if (*s2) return 1;
+	reuturn 0;			
 }
