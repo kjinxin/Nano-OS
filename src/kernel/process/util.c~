@@ -34,8 +34,9 @@ create_kthread(void *fun) {
 void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
-	
+
 	wakeup(create_kthread(read_mbr));
+	
 	PCB *pcb;
 	pcb=create_kthread(A);
 	pidA=pcb->pid;
@@ -55,10 +56,12 @@ init_proc() {
 	
 }
 
-void lock(){ 
-	IF_flag=((read_eflags()&0x200)==0)?0:1; 
+void lock(){  
 	if (current->depth++==0)   // to add the depth of lock
-	cli();
+	{
+		IF_flag=((read_eflags()&0x200)==0)?0:1;
+		cli();
+	}
 }
 
 void unlock(){
@@ -74,7 +77,7 @@ void sleep(Sem *s)    // the sleep process
 		current->sleep=1;
 	}
 	list_del(&current->list);
-	list_add_after(&(s->block),&(current->list));
+	list_add_before(&(s->block),&(current->list));
 	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
 	unlock();
 	asm volatile ("int $0x80");	
@@ -84,7 +87,7 @@ void wakeup(PCB *PCB_of_thread)
 {
 	lock();     // lock it 
 	list_del(&(PCB_of_thread->list));                  // first we delete from the initial list
-	list_add_after(&pcbwake,&(PCB_of_thread->list));   // add to the active list 
+	list_add_before(&pcbwake,&(PCB_of_thread->list));   // add to the active list 
 	PCB_of_thread->sleep=0;
 	unlock();   // unlock it 
 }
@@ -111,40 +114,44 @@ void P(Sem *s){
 
 void send(pid_t dest, Msg *m)
 {
-	PCB *pcb=fetch_pcb(dest);
-	P(&pcb->msg_mutex);
 	lock();
+	PCB *pcb=fetch_pcb(dest);
+	//P(&pcb->msg_mutex);
 	m->dest=dest;
 	Msg *mm=&Msg_q[msgnum++];
 	memcpy(mm, m, sizeof(Msg));
 	list_init(&mm->list);
-	list_add_after(&pcb->listmsg,&mm->list);
+	list_add_before(&pcb->listmsg,&mm->list);
 	unlock();
-	V(&pcb->msg_num);
-	V(&pcb->msg_mutex);
+	//V(&pcb->msg_num);
+	//V(&pcb->msg_mutex);
 }
 
 void receive(pid_t src, Msg *m)
 {
-	start1:
-	P(&current->msg_num);
-	P(&current->msg_mutex);
-	lock();
+	//P(&current->msg_num);
+	//P(&current->msg_mutex);
 	ListHead *ptr;
+	
+	start1:
 	list_foreach(ptr, &current->listmsg)
 	{
+		lock();
 		Msg *curm=list_entry(ptr, Msg, list);
 		if (src == ANY || src == curm->src)
 		{
 			list_del(ptr);
 			memcpy(m, curm, sizeof(Msg));
-			V(&current->msg_mutex);
+			//V(&current->msg_mutex);
+			unlock();
 			return;
 		}
+		unlock();
 	}
-	unlock();
-	V(&current->msg_mutex);
-	V(&current->msg_num);
+	asm volatile ("":::"memory");
+	//printk("");
+	//V(&current->msg_mutex);
+	//V(&current->msg_num);
 	asm volatile ("int $0x80");
 	goto start1;
 }
@@ -164,6 +171,7 @@ void A () {
 	m1.src = current->pid;
 	int x = 0;
 	while(1) {
+		//assert((read_eflags()&0x200));
 		if(x % 10000000 == 0) {
 			printk("a"); 
 			send(pidE, &m1);
@@ -178,6 +186,7 @@ void B () {
 	int x = 0;
 	receive(pidE, &m2);
 	while(1) {
+		//assert((read_eflags()&0x200));
 		if(x % 10000000 == 0) {
 			printk("b"); 
 			send(pidE, &m1);
@@ -192,6 +201,7 @@ void C () {
 	int x = 0;
 	receive(pidE, &m2);
 	while(1) {
+		//assert((read_eflags()&0x200));
 		if(x % 10000000 == 0) {
 			printk("c"); 
 			send(pidE, &m1);
@@ -206,6 +216,7 @@ void D () {
 	receive(pidE, &m2);
 	int x = 0;
 	while(1) {
+		//assert((read_eflags()&0x200));
 		if(x % 10000000 == 0) {
 			printk("d"); 
 			send(pidE, &m1);
@@ -220,6 +231,7 @@ void E () {
 	m2.src = current->pid;
 	char c;
 	while(1) {
+		assert((read_eflags()&0x200));
 		receive(ANY, &m1);
 		if(m1.src == pidA) {c = '|'; m2.dest = pidB; }
 		else if(m1.src == pidB) {c = '/'; m2.dest = pidC;}
@@ -238,16 +250,17 @@ void
 read_mbr(void) {
 	unsigned char buf[512];
 	size_t num;
+	dev_read("hda", current->pid, buf, 0, 512);
 	lock();
 	printk("Output MBR NUMBERS:\n");
-	dev_read("hda", current->pid, buf, 0, 512);
-	printk("jinxin\n");
 	for (num=0; num < 512; num++) {
 		if (buf[num]<16) printk("0");
 		printk("0x%x    ", buf[num]&255);
 	}
 	unlock();
-	sleep(&current->msg_mutex);
+	assert((read_eflags()&0x200));
+	while(1);
+	//sleep(&current->msg_mutex);
 }
 
 
