@@ -11,7 +11,7 @@ void init_intr(void);
 void init_proc(void);
 void welcome(void);
 void init_driver(void);
-
+void init_fm(void);
 void os_init_cont(void);
 
 void
@@ -50,7 +50,10 @@ os_init_cont(void) {
 
 	/* Initialize processes. You should fill this. */
 	init_proc();
+	// initialize drivers
 	init_driver();
+	// initialize file management
+ 	init_fm();
 	welcome();
 	sti();
 

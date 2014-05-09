@@ -2,6 +2,7 @@
 #include "string.h"
 #include "hal.h"
 #include "time.h"
+#include "fm.h"
 int depth=0;
 PCB PCB_thread[100];
 Msg Msg_q[100000];
@@ -35,7 +36,7 @@ void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
 
-	wakeup(create_kthread(read_mbr));
+	/*wakeup(create_kthread(read_mbr));
 	
 	PCB *pcb;
 	pcb=create_kthread(A);
@@ -52,8 +53,8 @@ init_proc() {
 	wakeup(pcb);
 	pcb=create_kthread(E);
 	pidE=pcb->pid;
-	wakeup(pcb);  	
-	
+	wakeup(pcb);  */	
+	wakeup(create_kthread(fm_test));
 }
 
 void lock(){  
@@ -248,7 +249,8 @@ void E () {
 
 
 void
-read_mbr(void) {
+read_mbr(void) 
+{
 	unsigned char buf[512];
 	size_t num;
 	dev_read("hda", current->pid, buf, 0, 512);
@@ -262,6 +264,19 @@ read_mbr(void) {
 	assert((read_eflags()&0x200));
 	while(1);
 	//sleep(&current->msg_mutex);
+}
+
+void fm_test(void)
+{
+	unsigned char buf[100];
+	printk("jinxin\n");
+	do_read(2, buf, 0, 20);
+	printk("jinxin\n");
+	size_t num;
+	for (num=0; num<20; num++)
+	printk("%c",buf[num]);
+	while(1);
+	//do_write(int file_name, uint8_t *buf, off_t offset, size_t len);	
 }
 
 

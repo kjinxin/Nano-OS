@@ -66,5 +66,4 @@ void C();
 void D();
 void E();
 void read_mbr();
-void fm_test();
 #endif
