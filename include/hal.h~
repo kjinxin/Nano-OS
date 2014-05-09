@@ -15,6 +15,7 @@ typedef struct Device {
 	const char *name;
 	pid_t pid;
 	int dev_id;
+	
 	ListHead list;
 } Dev;
 

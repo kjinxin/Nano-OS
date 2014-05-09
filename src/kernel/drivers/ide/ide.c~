@@ -4,6 +4,7 @@
 #include "time.h"
 #include "process.h"
 #define WRITEBACK_TIME  1  /* writeback cache for every 1 second */
+#define ANY -1 
 pid_t IDE;
 
 static void ide_intr(void);
