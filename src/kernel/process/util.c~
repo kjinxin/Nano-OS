@@ -9,6 +9,7 @@ int msgnum=0;
 ListHead pcbwake;
 int num=0;
 int pidA, pidB, pidC, pidD, pidE;
+int IF_flag;
 PCB*
 create_kthread(void *fun) {
 	PCB *pcb;
@@ -34,6 +35,7 @@ void
 init_proc() {
         list_init(&pcbwake);   // initialize the list of ready
 	
+	wakeup(create_kthread(read_mbr));
 	PCB *pcb;
 	pcb=create_kthread(A);
 	pidA=pcb->pid;
@@ -49,19 +51,18 @@ init_proc() {
 	wakeup(pcb);
 	pcb=create_kthread(E);
 	pidE=pcb->pid;
-	wakeup(pcb);  
-	
-	//wakeup(create_kthread(read_mbr));	
+	wakeup(pcb);  	
 	
 }
 
-void lock(){  
+void lock(){ 
+	IF_flag=((read_eflags()&0x200)==0)?0:1; 
 	if (current->depth++==0)   // to add the depth of lock
 	cli();
 }
 
 void unlock(){
-	if (--current->depth==0)   // to dec the depth of lock
+	if (--current->depth==0&&IF_flag==1)   // to dec the depth of lock
 	sti();
 }
 
@@ -74,7 +75,7 @@ void sleep(Sem *s)    // the sleep process
 	}
 	list_del(&current->list);
 	list_add_after(&(s->block),&(current->list));
-	wait_intr();   // we can set the interapt, also we can wait for the interapt!
+	//wait_intr();   // we can set the interapt, also we can wait for the interapt!
 	unlock();
 	asm volatile ("int $0x80");	
 }
@@ -116,8 +117,8 @@ void send(pid_t dest, Msg *m)
 	m->dest=dest;
 	Msg *mm=&Msg_q[msgnum++];
 	memcpy(mm, m, sizeof(Msg));
-	list_init(&m->list);
-	list_add_after(&pcb->listmsg,&m->list);
+	list_init(&mm->list);
+	list_add_after(&pcb->listmsg,&mm->list);
 	unlock();
 	V(&pcb->msg_num);
 	V(&pcb->msg_mutex);
@@ -141,7 +142,6 @@ void receive(pid_t src, Msg *m)
 			return;
 		}
 	}
-	
 	unlock();
 	V(&current->msg_mutex);
 	V(&current->msg_num);
@@ -238,12 +238,16 @@ void
 read_mbr(void) {
 	unsigned char buf[512];
 	size_t num;
+	lock();
+	printk("Output MBR NUMBERS:\n");
 	dev_read("hda", current->pid, buf, 0, 512);
+	printk("jinxin\n");
 	for (num=0; num < 512; num++) {
 		if (buf[num]<16) printk("0");
 		printk("0x%x    ", buf[num]&255);
 	}
-	while (1) printk("jinxin");
+	unlock();
+	sleep(&current->msg_mutex);
 }
 
 
