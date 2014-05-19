@@ -12,7 +12,38 @@ static void init_pm(void)
 
 void create_new_process(int file_name)
 {
-	
+	PCB *pcb;
+	uint8_t buf[512];
+	ProgramHeader *ph, *eph;
+	uint8_t *pa;
+	ELFHeader *elf;
+	/* read elfheader from ramdisk */
+	do_read(file_name, buf, 0 , 512);
+	elf = (ELFHeader *) buf;
+	/* tell mm we need to run a user process */
+	static MSg m;
+	m.src = PM;
+	m.type = MM_NEW_PROC;
+	send(MM, &m);
+	/* Copy process to memory */
+	ph = (ProgramHeader*)((uint8_t *)elf + elf->phoff);
+	eph = ph + elf->phnum;
+	for (; ph < eph; ph++)
+	{
+		m.src = current->pid;
+    		m.type = MM_NEW_PAGE;
+    		m.i[0] = ph->vaddr;
+    		m.i[1] = ph->memsz;
+    		send(MM, &m);
+    		receive(MM, &m);
+		pa = (uint8_t*)m.ret;
+		do_read(file_name, pa, ph->off, ph->filesz);
+		int * i;
+		for (i = pa + ph->filesz; i < pa + ph->memsz; *i ++ = 0);
+	}
+	pcb = create_kthread((void*) elf->entry);
+	pcb->cr3= get_user_cr3();
+	wakeup(p);
 }
 
 static void pm_thread(void)

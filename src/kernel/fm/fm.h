@@ -1,3 +1,5 @@
+#ifndef __FM_H__
+#define __FM_H__
 
 #define FILE_READ 0
 #define FILE_WRITE 1
@@ -7,4 +9,6 @@
 void init_fm(void);
 void do_read(int file_name, uint8_t *buf, off_t offset, size_t len);
 void do_write(int file_name, uint8_t *buf, off_t offset, size_t len); 
+
+#endif
 
