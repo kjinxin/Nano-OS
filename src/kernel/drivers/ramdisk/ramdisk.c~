@@ -5,7 +5,12 @@
 #define NR_MAX_FILE 8
 #define NR_FILE_SIZE (128 * 1024)
 pid_t RAMDISK;
-static uint8_t file[NR_MAX_FILE][NR_FILE_SIZE];
+static uint8_t file[NR_MAX_FILE][NR_FILE_SIZE]={
+	{0x12, 0x34, 0x56, 0x78},	// the first file '0'
+	{"Hello World!\n"},		// the second file '1'
+	{0x7f, 0x45, 0x4c, 0x46},	// the third file '2'
+	{"I'm JinXin, JYC!\n"}
+};
 static uint8_t *disk = (void*)file;
 static void ramdisk_driver_thread(void);
 

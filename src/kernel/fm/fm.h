@@ -1,7 +1,7 @@
-#include "kernel.h"
 
 #define FILE_READ 0
 #define FILE_WRITE 1
+
 #define NR_FILE_SIZE (128 * 1024)
 
 void init_fm(void);

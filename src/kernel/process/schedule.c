@@ -18,5 +18,6 @@ schedule(void) {
 		current=list_entry(pcbwake.next, PCB, list);
 	}
 	else current=&idle;
+	write_cr3(&current->cr3);
 } 
 

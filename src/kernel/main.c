@@ -13,6 +13,9 @@ void welcome(void);
 void init_driver(void);
 void init_fm(void);
 void os_init_cont(void);
+void init_user_proc(void);
+void init_mm(void);
+void init_pm(void);
 
 void
 os_init(void) {
@@ -54,9 +57,12 @@ os_init_cont(void) {
 	init_driver();
 	// initialize file management
  	init_fm();
+	init_mm();
+	init_pm();
+	init_user_proc();
 	welcome();
 	sti();
-
+	
 	/* This context now becomes the idle process. */
 	while (1) {
 		wait_intr();

@@ -1,0 +1,7 @@
+
+void pm_thread(void);
+void init_pm(void);
+
+extern pid_t PM;
+
+#define NEW_PROC 2

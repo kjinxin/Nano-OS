@@ -13,9 +13,9 @@ schedule(void) {
 		if (current->sleep==0)
 		{
 			list_del(&current->list);
-			list_add_after(&pcbwake,&current->list);
+			list_add_before(&pcbwake,&current->list);
 		}
-		current=list_entry(pcbwake.prev, PCB, list);
+		current=list_entry(pcbwake.next, PCB, list);
 	}
 	else current=&idle;
 } 
