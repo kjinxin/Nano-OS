@@ -1,27 +1,21 @@
 #include "kernel.h"
 #include "pm.h"
+#include "mm.h"
+#include "fm.h"
 pid_t PM;
-
-
-static void init_pm(void)
-{
-	PCB* p = create_kthread(pm_thread);
-	PM = p->pid;
-	wakeup(p);
-}
 
 void create_new_process(int file_name)
 {
 	PCB *pcb;
 	uint8_t buf[512];
 	ProgramHeader *ph, *eph;
-	uint8_t *pa;
+	uint8_t *pa, *i;
 	ELFHeader *elf;
 	/* read elfheader from ramdisk */
 	do_read(file_name, buf, 0 , 512);
 	elf = (ELFHeader *) buf;
 	/* tell mm we need to run a user process */
-	static MSg m;
+	static Msg m;
 	m.src = PM;
 	m.type = MM_NEW_PROC;
 	send(MM, &m);
@@ -38,15 +32,14 @@ void create_new_process(int file_name)
     		receive(MM, &m);
 		pa = (uint8_t*)m.ret;
 		do_read(file_name, pa, ph->off, ph->filesz);
-		int * i;
 		for (i = pa + ph->filesz; i < pa + ph->memsz; *i ++ = 0);
 	}
 	pcb = create_kthread((void*) elf->entry);
 	pcb->cr3= get_user_cr3();
-	wakeup(p);
+	wakeup(pcb);
 }
 
-static void pm_thread(void)
+void pm_thread(void)
 {
 	static Msg m;
 	while (true) {
@@ -73,4 +66,11 @@ void create_process(int file_name)
 void init_user_proc(void)
 {
 	create_process(1);	
+}
+
+void init_pm()
+{
+	PCB* p = create_kthread(pm_thread);
+	PM = p->pid;
+	wakeup(p);
 }

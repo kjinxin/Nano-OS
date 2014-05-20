@@ -18,7 +18,7 @@ typedef struct PCB {
 	pid_t pid;
 	Sem msg_mutex,msg_num;
 	ListHead list,listmsg;
-	CR3 cr3;
+	CR3 *cr3;
 } PCB;
 
 

@@ -1,6 +1,6 @@
 #ifndef __FM_H__
 #define __FM_H__
-
+#include "kernel.h"
 #define FILE_READ 0
 #define FILE_WRITE 1
 

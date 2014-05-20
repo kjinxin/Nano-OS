@@ -16,7 +16,6 @@ static void ramdisk_driver_thread(void);
 
 void init_ramdisk()
 {  
-	
 	PCB *p = create_kthread(ramdisk_driver_thread);
 	RAMDISK = p->pid;
 	hal_register("ramdisk", RAMDISK, 0);

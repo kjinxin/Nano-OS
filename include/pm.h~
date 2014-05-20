@@ -1,7 +1,7 @@
 #ifndef __PM_H__
 #define __PM_H__
 static void pm_thread(void);
-static void init_pm(void);
+void init_pm(void);
 
 extern pid_t PM;
 /* Structure of a ELF binary header */
