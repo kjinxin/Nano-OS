@@ -152,7 +152,7 @@ void receive(pid_t src, Msg *m)
 		unlock();
 	}
 	
-	//printk("");
+	printk("jinxinreveive\n");
 	//V(&current->msg_mutex);
 	//V(&current->msg_num);
 	asm volatile ("int $0x80");

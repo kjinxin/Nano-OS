@@ -13,6 +13,8 @@ void create_new_process(int file_name)
 	ELFHeader *elf;
 	/* read elfheader from ramdisk */
 	do_read(file_name, buf, 0 , 512);
+	printk("jinxin\n");
+	printk("jinxin%d\n",buf[0]);
 	elf = (ELFHeader *) buf;
 	/* tell mm we need to run a user process */
 	static Msg m;

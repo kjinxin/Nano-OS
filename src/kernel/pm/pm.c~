@@ -12,7 +12,10 @@ void create_new_process(int file_name)
 	uint8_t *pa, *i;
 	ELFHeader *elf;
 	/* read elfheader from ramdisk */
+	printk("jinxin\n");
 	do_read(file_name, buf, 0 , 512);
+	printk("jinxin\n");
+	printk("jinxin%d\n",buf[0]);
 	elf = (ELFHeader *) buf;
 	/* tell mm we need to run a user process */
 	static Msg m;
@@ -39,7 +42,7 @@ void create_new_process(int file_name)
 	wakeup(pcb);
 }
 
-static void pm_thread(void)
+void pm_thread(void)
 {
 	static Msg m;
 	while (true) {

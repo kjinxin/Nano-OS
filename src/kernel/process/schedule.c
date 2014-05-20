@@ -16,8 +16,8 @@ schedule(void) {
 			list_add_before(&pcbwake,&current->list);
 		}
 		current=list_entry(pcbwake.next, PCB, list);
+		write_cr3(current->cr3);
 	}
 	else current=&idle;
-	write_cr3(current->cr3);
 } 
 

@@ -25,7 +25,7 @@ create_kthread(void *fun) {
 	pcb->depth=0;
 	pcb->sleep=0;
 	pcb->pid=num++;
-	pcb->cr3 = *get_kcr3();
+	pcb->cr3 = get_kcr3();
         //其他寄存器等到下次要用的时候会统一赋值
 	list_init(&pcb->list);
 	list_init(&pcb->listmsg);
@@ -152,7 +152,7 @@ void receive(pid_t src, Msg *m)
 		unlock();
 	}
 	
-	//printk("");
+	printk("jinxinreveive");
 	//V(&current->msg_mutex);
 	//V(&current->msg_num);
 	asm volatile ("int $0x80");
