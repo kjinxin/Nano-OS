@@ -20,7 +20,7 @@ static void init_mem(void)
 		map[i] = false;
 	/* initialize the user pdir*/
 	PDE *pdir;
-	PTE *kptable;
+	PTE *ptable;
 	int pdir_idx;
 	for (i = 0; i< USER_NUM; i++)
 	{
@@ -28,34 +28,29 @@ static void init_mem(void)
 		for (pdir_idx = 0; pdir_idx < NR_PDE; pdir_idx++)
 			make_invalid_pde(pdir + pdir_idx);
 		/* set the kernel reflection */
-        	kptable = get_kptable();
-        	for (pdir_idx = 0; pdir_idx < 4; pdir_idx ++) 
+        	ptable = (PTE *)va_to_pa(get_kptable());
+        	for (pdir_idx = 0; pdir_idx < KMEM / PD_SIZE; pdir_idx ++) 
 		{
-            		make_pde(&pdir[pdir_idx + KOFFSET / PD_SIZE], (PDE *)va_to_pa(kptable));
-            		kptable += NR_PTE;
+            		make_pde(&pdir[pdir_idx + KOFFSET / PD_SIZE], ptable);
+            		ptable += NR_PTE;
         	}
 		/* make CR3 to be the entry of user page directory */
 		hash[i] = true;
 		user_cr3[i].val=0;
 		user_cr3[i].page_directory_base = (uint32_t)va_to_pa(user_pdir + i) >> 12;
 	}
-	int j;
-    	for(i = 0; i < USER_NUM * 3; i ++) 
-        for(j = 0; j < NR_PTE; j ++) 
-        user_ptable[i][j].val = 0;
 }
 
 inline CR3* get_user_cr3() {
-    int i,j=0;
+    int i;
     for(i = 0; i < USER_NUM; i ++) {
         if(hash[i]) {
             hash[i] = false;
             cr3 = user_cr3 + i;
-            j=i;
 	    break;
         }
     }
-    return user_cr3 + j;
+    return cr3;
 }
 static void* free_phy_mem()
 {
@@ -85,7 +80,8 @@ void mm_thread(void)
 		receive(ANY, &m);
 		switch (m.type) {
 			case MM_NEW_PROC:
-				cr3=get_user_cr3();	
+				get_user_cr3();	
+				printk("mm_thread MM_NEW_PROC%d\n",cr3->val);
 				break;
 			case MM_NEW_PAGE:
 				va = (uint8_t *)m.i[0];
@@ -97,7 +93,9 @@ void mm_thread(void)
                 		int pdir_base = (uint32_t)va >> 22;
                 		int ptable_base = ((uint32_t)va >> 12) & 0x3ff;
                 		int ptable_num = (memsz - 1) / PAGE_SIZE + 1;
+				
                 		int pdir_num = (ptable_num - 1) / NR_PTE + 1;
+				
                 		if(memsz == 0) ptable_num= pdir_num = 0;
                 		//assert(ptable_num < 3 * USR_PROC_MAX);
 
@@ -139,10 +137,8 @@ void mm_thread(void)
 				m.ret = (int) pa;
 				send(m.dest, &m);
 				break;
-			default: assert(0);
+			default: 
+				assert(0);
 		}
-		m.dest = m.src;
-		m.src = MM;
-		send(m.dest,&m);
 	}
 }

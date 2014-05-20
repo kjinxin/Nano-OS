@@ -16,6 +16,7 @@ void os_init_cont(void);
 void init_user_proc(void);
 void init_mm(void);
 void init_pm(void);
+
 void
 os_init(void) {
 	/* Notice that when we are here, IF is always 0 (see bootloader) */
@@ -49,7 +50,7 @@ os_init_cont(void) {
 
 	/* Initialize the intel 8259 PIC. */
 	init_intr();
-
+	printk("joainingae");
 	/* Initialize processes. You should fill this. */
 	init_proc();
 	// initialize drivers

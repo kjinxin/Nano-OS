@@ -38,7 +38,7 @@ init_page(void) {
 	PTE *ptable = (PTE *)va_to_pa(kptable);
 	uint32_t pdir_idx, ptable_idx, pframe_idx;
 
-
+	
 	for (pdir_idx = 0; pdir_idx < NR_PDE; pdir_idx ++) {
 		make_invalid_pde(&pdir[pdir_idx]);
 	}
@@ -53,7 +53,7 @@ init_page(void) {
 			ptable ++;
 		}
 	}
-
+	
 	/* make CR3 to be the entry of page directory */
 	cr3.val = 0;
 	cr3.page_directory_base = ((uint32_t)pdir) >> 12;
@@ -63,9 +63,9 @@ init_page(void) {
 	cr0.val = read_cr0();
 	cr0.paging = 1;
 	write_cr0(&cr0);
-
 	/* Now we can access global variables! 
 	 * Store CR3 in the global variable for future use. */
+	
 	kcr3.val = cr3.val;
 }
 

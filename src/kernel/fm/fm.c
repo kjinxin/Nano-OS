@@ -14,7 +14,6 @@ do_read(int file_name, uint8_t *buf, off_t offset, size_t len)
 	m.len = len;
 	m.type = FILE_READ;
 	send(FM, &m);
-	printk("jinxin\n");
 	receive(FM, &m);
 }
 
@@ -44,7 +43,6 @@ static void fm_thread(void)
 	static Msg m;
 	while (true) {
 		receive(ANY, &m);
-		printk("jinxin\n");
 		switch (m.type) {
 			case FILE_READ:
 				dev_read("ramdisk", m.req_pid, m.buf, m.dev_id*NR_FILE_SIZE+m.offset, m.len);

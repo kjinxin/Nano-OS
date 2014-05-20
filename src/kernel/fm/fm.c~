@@ -14,7 +14,6 @@ do_read(int file_name, uint8_t *buf, off_t offset, size_t len)
 	m.len = len;
 	m.type = FILE_READ;
 	send(FM, &m);
-	printk("jinxin\n");
 	receive(FM, &m);
 }
 
@@ -43,7 +42,6 @@ static void fm_thread(void)
 {
 	static Msg m;
 	while (true) {
-		printk("jinxin\n");
 		receive(ANY, &m);
 		switch (m.type) {
 			case FILE_READ:

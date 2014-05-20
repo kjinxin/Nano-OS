@@ -7,5 +7,5 @@ void init_mm(void);
 inline CR3* get_user_cr3(); 
 #define MM_NEW_PROC 3
 #define MM_NEW_PAGE 4
-#define USER_NUM 10
+#define USER_NUM 1
 #endif

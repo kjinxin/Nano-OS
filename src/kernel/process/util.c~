@@ -23,9 +23,9 @@ create_kthread(void *fun) {
 	tf->ds = 0x10;
 	tf->es = 0x10;	
 	pcb->depth=0;
-	pcb->sleep=0;
+	pcb->sleep=1;
 	pcb->pid=num++;
-	pcb->cr3 = get_kcr3();
+	pcb->cr3= *get_kcr3();
         //其他寄存器等到下次要用的时候会统一赋值
 	list_init(&pcb->list);
 	list_init(&pcb->listmsg);
@@ -74,9 +74,9 @@ void unlock(){
 void sleep(Sem *s)    // the sleep process 
 {
 	lock();
-	if (current->sleep==0) 
+	if (current->sleep==1) 
 	{
-		current->sleep=1;
+		current->sleep=0;
 	}
 	list_del(&current->list);
 	list_add_before(&(s->block),&(current->list));
@@ -90,7 +90,7 @@ void wakeup(PCB *PCB_of_thread)
 	lock();     // lock it 
 	list_del(&(PCB_of_thread->list));                  // first we delete from the initial list
 	list_add_before(&pcbwake,&(PCB_of_thread->list));   // add to the active list 
-	PCB_of_thread->sleep=0;
+	PCB_of_thread->sleep=1;
 	unlock();   // unlock it 
 }
 
@@ -120,6 +120,7 @@ void send(pid_t dest, Msg *m)
 	PCB *pcb=fetch_pcb(dest);
 	//P(&pcb->msg_mutex);
 	m->dest=dest;
+	//printk("send %d  %d   %d\n",m->type, m->src, m->dest);
 	Msg *mm=&Msg_q[msgnum++];
 	memcpy(mm, m, sizeof(Msg));
 	list_init(&mm->list);
@@ -152,7 +153,6 @@ void receive(pid_t src, Msg *m)
 		unlock();
 	}
 	
-	printk("jinxinreveive");
 	//V(&current->msg_mutex);
 	//V(&current->msg_num);
 	asm volatile ("int $0x80");

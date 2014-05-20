@@ -13,12 +13,10 @@ void create_new_process(int file_name)
 	ELFHeader *elf;
 	/* read elfheader from ramdisk */
 	do_read(file_name, buf, 0 , 512);
-	printk("jinxin\n");
-	printk("jinxin%d\n",buf[0]);
 	elf = (ELFHeader *) buf;
 	/* tell mm we need to run a user process */
 	static Msg m;
-	m.src = PM;
+	m.src = current->pid;
 	m.type = MM_NEW_PROC;
 	send(MM, &m);
 	/* Copy process to memory */
@@ -31,13 +29,17 @@ void create_new_process(int file_name)
     		m.i[0] = ph->vaddr;
     		m.i[1] = ph->memsz;
     		send(MM, &m);
+		//printk("create_new_process\n");
     		receive(MM, &m);
+		//printk("create_new_process receive\n");
 		pa = (uint8_t*)m.ret;
+		printk("create_new_PAGE    %d\n",current->pid);
 		do_read(file_name, pa, ph->off, ph->filesz);
 		for (i = pa + ph->filesz; i < pa + ph->memsz; *i ++ = 0);
 	}
+	printk("create_new_process\n");
 	pcb = create_kthread((void*) elf->entry);
-	pcb->cr3= get_user_cr3();
+	pcb->cr3= *get_user_cr3();
 	wakeup(pcb);
 }
 
@@ -67,7 +69,8 @@ void create_process(int file_name)
 }
 void init_user_proc(void)
 {
-	create_process(1);	
+	create_process(1);
+	//create_process(2);	
 }
 
 void init_pm()
