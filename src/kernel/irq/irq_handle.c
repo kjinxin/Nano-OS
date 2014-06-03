@@ -37,10 +37,12 @@ add_irq_handle(int irq, void (*func)(void) ) {
 }
 void schedule();
 
-void getpid()
+int getpid()
 {
-	int cpid=sys_getpid;
-	asm volatile("int 0x80" :"=a"(cpid)::"a");
+	int cpid=sys_getpid,result;
+	asm volatile("int $0x80\n\t""movl %%ecx, %%eax":"=a"(result):"c"(cpid));
+	return result;
+	
 
 }
 void irq_handle(TrapFrame *tf) {
@@ -50,14 +52,14 @@ void irq_handle(TrapFrame *tf) {
 	}
 	if (irq == 0x80)
 	{
-		switch (tf->eax)
+		switch (tf->ecx)
 		{
 			case sys_getpid:
-				tf->eax = current->pid;
+				tf->ecx = current->pid;
 				current->tf = tf;
 				return;
 			default:
-				assert(0);	
+				printk("");
 		}
 	}
 	if ((irq < 1000)&&(irq!=0x80)) {
