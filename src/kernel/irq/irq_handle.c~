@@ -37,11 +37,10 @@ add_irq_handle(int irq, void (*func)(void) ) {
 }
 void schedule();
 
-void getpid()
+int getpid()
 {
 	int cpid=sys_getpid;
 	asm volatile("int 0x80" :"=a"(cpid)::"a");
-
 }
 void irq_handle(TrapFrame *tf) {
 	int irq = tf->irq;

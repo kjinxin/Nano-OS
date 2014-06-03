@@ -85,47 +85,23 @@ void mm_thread(void)
 				break;
 			case MM_NEW_PAGE:
 				va = (uint8_t *)m.i[0];
-				int memsz = (int) m.i[1];
+				//int memsz = (int) m.i[1];
 				PDE *pdir = (PDE *)(*(uint32_t *)cr3 & ~0xfff);
                 		PTE *ptable = user_ptable[3 * (int)(pdir - user_pdir[0])];
 					
 				/* calculate where to lacate */
                 		int pdir_base = (uint32_t)va >> 22;
                 		int ptable_base = ((uint32_t)va >> 12) & 0x3ff;
-                		//int ptable_num = (memsz - 1) / PAGE_SIZE + 1;
-				
-                		//int pdir_num = (ptable_num - 1) / NR_PTE + 1;
-				
-				//printk("NN_NEW_PAGE %d   %d\n", ptable_num,pdir_num);
-                		//if(memsz == 0) ptable_num= pdir_num = 0;
-                		//assert(ptable_num < 3 * USR_PROC_MAX);
 
                 		/* fill pdir */
-                		int pdir_idx, ptable_idx;
+                		int ptable_idx;
                     		make_pde(pdir + pdir_base, (PTE *)va_to_pa(ptable));
-                    			if(ptable_num + ptable_base < NR_PTE) 
-					{
-                        			ptable += ptable_base;
-                        			for(ptable_idx = ptable_base; ptable_idx < ptable_base + ptable_num; ptable_idx ++) 
-						{
-                        	    			if(ptable->val != 0) continue;
-                        	    			make_pte(ptable, free_phy_mem());
-                        	    			ptable ++;
-                        			}
-                        			break;
-                    			} else 
-					{
-                        			ptable += ptable_base;
-                        			for(ptable_idx = ptable_base; ptable_idx < NR_PTE; ptable_idx ++) 
-						{
-                        	    			if(ptable->val != 0) continue;
-                        	    			make_pte(ptable, free_phy_mem());
-                        	    			ptable ++;
-                        			}
-                        			ptable_num = ptable_num + ptable_base - NR_PTE;
-                        			ptable_base = 0;
-                    			}
-                		}
+                        	ptable += ptable_base;
+                        	for(ptable_idx = ptable_base; ptable_idx < NR_PTE; ptable_idx ++) 
+				{
+                        	    	make_pte(ptable, free_phy_mem());
+                        	    	ptable ++;
+                        	}
 				
 				uint32_t pde = ((uint32_t *)(*(uint32_t *)cr3 & ~0xfff))[(uint32_t)va >> 22];
                 		uint32_t pte = ((uint32_t *)(pde & ~0xfff))[((uint32_t)va >> 12) & 0x3ff];

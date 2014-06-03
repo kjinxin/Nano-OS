@@ -4,6 +4,7 @@
 #include "adt/list.h"
 
 #define ANY -1
+#define sys_getpid 100
 typedef struct Semaphore {
 	int taken;
 	ListHead block;		/* blocking queue */

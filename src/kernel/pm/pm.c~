@@ -22,22 +22,21 @@ void create_new_process(int file_name)
 	/* Copy process to memory */
 	ph = (ProgramHeader*)((uint8_t *)elf + elf->phoff);
 	eph = ph + elf->phnum;
-	for (; ph < eph; ph++)
+	for (; ph < eph-1; ph++)
 	{
 		m.src = current->pid;
     		m.type = MM_NEW_PAGE;
     		m.i[0] = ph->vaddr;
     		m.i[1] = ph->memsz;
     		send(MM, &m);
-		//printk("create_new_process\n");
+		
     		receive(MM, &m);
-		//printk("create_new_process receive\n");
+	
 		pa = (uint8_t*)m.ret;
-		printk("create_new_PAGE    %d\n",current->pid);
+		
 		do_read(file_name, pa, ph->off, ph->filesz);
 		for (i = pa + ph->filesz; i < pa + ph->memsz; *i ++ = 0);
 	}
-	printk("create_new_process\n");
 	pcb = create_kthread((void*) elf->entry);
 	pcb->cr3= *get_user_cr3();
 	wakeup(pcb);
@@ -70,7 +69,7 @@ void create_process(int file_name)
 void init_user_proc(void)
 {
 	create_process(1);
-	create_process(2);	
+	create_process(3);	
 }
 
 void init_pm()
